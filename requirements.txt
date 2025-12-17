@@ -1,0 +1,5 @@
+customtkinter
+psutil
+humanize
+send2trash
+matplotlib

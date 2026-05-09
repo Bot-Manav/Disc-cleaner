@@ -333,21 +333,43 @@ def show_frame(name):
     except Exception:
         pass
 
+class AccordionCard(ctk.CTkFrame):
+    def __init__(self, master, title, default_open=False, **kwargs):
+        super().__init__(master, fg_color="transparent", **kwargs)
+        self.is_open = default_open
+        self.btn = ctk.CTkButton(self, text=("▼ " if self.is_open else "▶ ") + title, 
+                                 anchor="w", font=ctk.CTkFont(weight="bold"), 
+                                 fg_color="#2b2b2b", hover_color="#3b3b3b",
+                                 command=self.toggle)
+        self.btn.pack(fill='x', pady=(0, 2))
+        self.content_frame = ctk.CTkFrame(self)
+        if self.is_open:
+            self.content_frame.pack(fill='both', expand=True, padx=4, pady=4)
+            
+    def toggle(self):
+        self.is_open = not self.is_open
+        if self.is_open:
+            self.btn.configure(text="▼ " + self.btn.cget("text")[2:])
+            self.content_frame.pack(fill='both', expand=True, padx=4, pady=4)
+        else:
+            self.btn.configure(text="▶ " + self.btn.cget("text")[2:])
+            self.content_frame.pack_forget()
+
 # ----------------------------
 # Dashboard frame
 # ----------------------------
 dash = frames['dashboard']
 dash.pack(padx=12, pady=12)
 
-lbl = ctk.CTkLabel(dash, text="Dashboard - Quick Folder Scan", font=ctk.CTkFont(size=16, weight="bold"))
-lbl.pack(anchor='w', pady=(4,8))
+lbl = ctk.CTkLabel(dash, text="Dashboard — Quick Folder Scan", font=ctk.CTkFont(size=22, weight="bold"))
+lbl.pack(anchor='w', pady=(8,12))
 
-dash_select_frame = ctk.CTkFrame(dash)
-dash_select_frame.pack(fill='x', pady=(4,8))
+dash_select_frame = ctk.CTkFrame(dash, fg_color="transparent")
+dash_select_frame.pack(fill='x', pady=(4,12))
 
 dash_path_var = ctk.StringVar()
-dash_entry = ctk.CTkEntry(dash_select_frame, textvariable=dash_path_var, width=640)
-dash_entry.grid(row=0, column=0, padx=(8,8), pady=8)
+dash_entry = ctk.CTkEntry(dash_select_frame, textvariable=dash_path_var, width=540, height=36, font=ctk.CTkFont(size=14))
+dash_entry.pack(side='left', padx=(0,12))
 
 # cancel event for dashboard scan
 dash_cancel_event = None
@@ -357,24 +379,25 @@ def choose_dash_folder():
     p = filedialog.askdirectory()
     if p:
         dash_path_var.set(p)
-        threading.Thread(target=dashboard_scan, args=(p,), daemon=True).start()
 
-dash_browse_btn = ctk.CTkButton(dash_select_frame, text="Browse", command=choose_dash_folder)
-dash_browse_btn.grid(row=0, column=1, padx=6)
+dash_browse_btn = ctk.CTkButton(dash_select_frame, text="Browse", width=100, height=36, font=ctk.CTkFont(weight="bold"), command=choose_dash_folder)
+dash_browse_btn.pack(side='left', padx=6)
 
 def dash_scan_button():
     p = dash_path_var.get()
     threading.Thread(target=dashboard_scan, args=(p,), daemon=True).start()
 
-dash_scan_btn = ctk.CTkButton(dash_select_frame, text="Scan", command=dash_scan_button)
-dash_scan_btn.grid(row=0, column=2, padx=6)
+dash_scan_btn = ctk.CTkButton(dash_select_frame, text="Start Scan", width=120, height=36, fg_color="#28a745", hover_color="#218838", font=ctk.CTkFont(weight="bold"), command=dash_scan_button)
+dash_scan_btn.pack(side='left', padx=6)
 
-dash_cancel_btn = ctk.CTkButton(dash_select_frame, text="Cancel Scan", fg_color="#ff6666", hover_color="#ff3333",
-                               command=lambda: cancel_scan('dashboard'))
-dash_cancel_btn.grid(row=0, column=3, padx=6)
+dash_cancel_btn = ctk.CTkButton(dash_select_frame, text="Cancel", width=100, height=36, fg_color="#dc3545", hover_color="#c82333", font=ctk.CTkFont(weight="bold"), command=lambda: cancel_scan('dashboard'))
+dash_cancel_btn.pack(side='left', padx=6)
 
-dash_output = ScrolledText(dash, height=20, bg="#101010", fg="#00ff99", font=OUTPUT_FONT)
-dash_output.pack(fill='both', expand=True, pady=(8,0))
+dash_chart_btn = ctk.CTkButton(dash_select_frame, text="📊 View Chart", width=120, height=36, font=ctk.CTkFont(weight="bold"), state="disabled", command=lambda: show_dash_chart())
+dash_chart_btn.pack(side='right', padx=6)
+
+dash_output_scroll = ctk.CTkScrollableFrame(dash, fg_color="transparent")
+dash_output_scroll.pack(fill='both', expand=True, pady=(8,0))
 
 # ----------------------------
 # Folder Visualizer frame
@@ -382,15 +405,15 @@ dash_output.pack(fill='both', expand=True, pady=(8,0))
 viz = frames['visualizer']
 viz.pack(padx=12, pady=12)
 
-v_lbl = ctk.CTkLabel(viz, text="Folder Visualizer", font=ctk.CTkFont(size=16, weight="bold"))
-v_lbl.pack(anchor='w', pady=(4,8))
+v_lbl = ctk.CTkLabel(viz, text="Folder Visualizer & Deep Analysis", font=ctk.CTkFont(size=22, weight="bold"))
+v_lbl.pack(anchor='w', pady=(8,12))
 
-viz_select_frame = ctk.CTkFrame(viz)
-viz_select_frame.pack(fill='x', pady=(4,8))
+viz_select_frame = ctk.CTkFrame(viz, fg_color="transparent")
+viz_select_frame.pack(fill='x', pady=(4,12))
 
 viz_path_var = ctk.StringVar()
-viz_entry = ctk.CTkEntry(viz_select_frame, textvariable=viz_path_var, width=640)
-viz_entry.grid(row=0, column=0, padx=(8,8), pady=8)
+viz_entry = ctk.CTkEntry(viz_select_frame, textvariable=viz_path_var, width=540, height=36, font=ctk.CTkFont(size=14))
+viz_entry.pack(side='left', padx=(0,12))
 
 # cancel event for viz scan
 viz_cancel_event = None
@@ -401,34 +424,24 @@ def choose_viz_folder():
     if p:
         viz_path_var.set(p)
 
-viz_browse_btn = ctk.CTkButton(viz_select_frame, text="Browse", command=choose_viz_folder)
-viz_browse_btn.grid(row=0, column=1, padx=6)
+viz_browse_btn = ctk.CTkButton(viz_select_frame, text="Browse", width=100, height=36, font=ctk.CTkFont(weight="bold"), command=choose_viz_folder)
+viz_browse_btn.pack(side='left', padx=6)
 
 def viz_scan_button():
     p = viz_path_var.get()
     threading.Thread(target=folder_visualize, args=(p,), daemon=True).start()
 
-viz_scan_btn = ctk.CTkButton(viz_select_frame, text="Analyze Folder", command=viz_scan_button)
-viz_scan_btn.grid(row=0, column=2, padx=6)
+viz_scan_btn = ctk.CTkButton(viz_select_frame, text="Analyze", width=120, height=36, fg_color="#28a745", hover_color="#218838", font=ctk.CTkFont(weight="bold"), command=viz_scan_button)
+viz_scan_btn.pack(side='left', padx=6)
 
-viz_cancel_btn = ctk.CTkButton(viz_select_frame, text="Cancel Analysis", fg_color="#ff6666", hover_color="#ff3333",
-                              command=lambda: cancel_scan('visualizer'))
-viz_cancel_btn.grid(row=0, column=3, padx=6)
+viz_cancel_btn = ctk.CTkButton(viz_select_frame, text="Cancel", width=100, height=36, fg_color="#dc3545", hover_color="#c82333", font=ctk.CTkFont(weight="bold"), command=lambda: cancel_scan('visualizer'))
+viz_cancel_btn.pack(side='left', padx=6)
 
-# left: stats text, right: list of types
-viz_pane = ctk.CTkFrame(viz)
-viz_pane.pack(fill='both', expand=True, pady=(8,0))
+viz_chart_btn = ctk.CTkButton(viz_select_frame, text="🥧 View Pie Chart", width=140, height=36, font=ctk.CTkFont(weight="bold"), state="disabled", command=lambda: show_viz_chart())
+viz_chart_btn.pack(side='right', padx=6)
 
-viz_left = ctk.CTkFrame(viz_pane)
-viz_left.pack(side='left', fill='both', expand=True, padx=(4,8))
-viz_right = ctk.CTkFrame(viz_pane, width=320)
-viz_right.pack(side='right', fill='y', padx=(8,4))
-
-viz_output = ScrolledText(viz_left, bg="#0f0f0f", fg="#aaffc4", font=OUTPUT_FONT)
-viz_output.pack(fill='both', expand=True)
-
-types_listbox = ctk.CTkTextbox(viz_right, width=300, height=400)
-types_listbox.pack(padx=8, pady=8)
+viz_output_scroll = ctk.CTkScrollableFrame(viz, fg_color="transparent")
+viz_output_scroll.pack(fill='both', expand=True, pady=(8,0))
 
 # ----------------------------
 # Cache frame
@@ -436,18 +449,47 @@ types_listbox.pack(padx=8, pady=8)
 cachef = frames['cache']
 cachef.pack(padx=12, pady=12)
 
-c_lbl = ctk.CTkLabel(cachef, text="Cache Cleaner", font=ctk.CTkFont(size=16, weight="bold"))
-c_lbl.pack(anchor='w', pady=(4,8))
-
-cache_output = ScrolledText(cachef, height=18, bg="#0f0f0f", fg="#b9a6ff", font=OUTPUT_FONT)
-cache_output.pack(fill='both', expand=True, pady=(8,0))
+c_lbl = ctk.CTkLabel(cachef, text="Cache Cleaner", font=ctk.CTkFont(size=18, weight="bold"))
+c_lbl.pack(anchor='w', pady=(8, 12))
 
 cache_btn_frame = ctk.CTkFrame(cachef)
-cache_btn_frame.pack(fill='x', pady=(8,6))
-cache_scan_btn = ctk.CTkButton(cache_btn_frame, text="Scan Cache", command=lambda: threading.Thread(target=cache_scan_and_report, daemon=True).start())
-cache_scan_btn.pack(side='left', padx=8)
-cache_clean_btn = ctk.CTkButton(cache_btn_frame, text="Clean Cache (safe)", fg_color="#ff5555", hover_color="#ff3333", command=lambda: threading.Thread(target=cache_clean_all, daemon=True).start())
-cache_clean_btn.pack(side='left', padx=8)
+cache_btn_frame.pack(fill='x', pady=(0, 8))
+
+cache_scan_btn = ctk.CTkButton(cache_btn_frame, text="🔍 Scan Default Caches", command=lambda: threading.Thread(target=cache_scan_and_report, daemon=True).start())
+cache_scan_btn.pack(side='left', padx=8, pady=8)
+
+def choose_custom_cache():
+    p = filedialog.askdirectory()
+    if p:
+        threading.Thread(target=cache_scan_custom, args=(p,), daemon=True).start()
+
+cache_custom_btn = ctk.CTkButton(cache_btn_frame, text="📂 Add Custom Folder", command=choose_custom_cache)
+cache_custom_btn.pack(side='left', padx=8, pady=8)
+
+def toggle_all_caches(select=True):
+    for var in cache_checkbox_vars.values():
+        var.set(1 if select else 0)
+
+cache_deselect_all_btn = ctk.CTkButton(cache_btn_frame, text="☐ Deselect All", width=100, fg_color="#2b2b2b", hover_color="#3b3b3b", command=lambda: toggle_all_caches(False))
+cache_deselect_all_btn.pack(side='right', padx=8, pady=8)
+
+cache_select_all_btn = ctk.CTkButton(cache_btn_frame, text="☑ Select All", width=100, fg_color="#2b2b2b", hover_color="#3b3b3b", command=lambda: toggle_all_caches(True))
+cache_select_all_btn.pack(side='right', padx=8, pady=8)
+
+cache_scroll = ctk.CTkScrollableFrame(cachef)
+cache_scroll.pack(fill='both', expand=True, pady=(0, 8))
+
+cache_checkbox_vars = {}
+cache_meta_data = {}
+
+cache_bottom_frame = ctk.CTkFrame(cachef)
+cache_bottom_frame.pack(fill='x')
+
+cache_summary_lbl = ctk.CTkLabel(cache_bottom_frame, text="Select caches to clean.", font=ctk.CTkFont(size=14))
+cache_summary_lbl.pack(side='left', padx=12, pady=12)
+
+cache_clean_btn = ctk.CTkButton(cache_bottom_frame, text="🗑️ Clean Selected Caches (Safe)", fg_color="#ff5555", hover_color="#ff3333", height=40, font=ctk.CTkFont(size=14, weight="bold"), command=lambda: threading.Thread(target=cache_clean_selected, daemon=True).start())
+cache_clean_btn.pack(side='right', padx=12, pady=12)
 
 # ----------------------------
 # Drive frame
@@ -457,7 +499,7 @@ drivef.pack(padx=12, pady=12)
 drive_lbl = ctk.CTkLabel(drivef, text="Drive Info", font=ctk.CTkFont(size=16, weight="bold"))
 drive_lbl.pack(anchor='w', pady=(4,8))
 
-drive_output = ScrolledText(drivef, bg="#0f0f0f", fg="#8fe0ff", font=OUTPUT_FONT)
+drive_output = ScrolledText(drivef, bg="#1e1e1e", fg="#e0e0e0", insertbackground="white", font=OUTPUT_FONT)
 drive_output.pack(fill='both', expand=True)
 
 def show_drive_info():
@@ -495,6 +537,52 @@ def cancel_scan(scope):
         status_var.set("Cancelling...")
 
 # ----------------------------
+# Chart showing helpers
+# ----------------------------
+dash_current_ext_summary = []
+viz_current_ext_summary = []
+
+def show_dash_chart():
+    if not dash_current_ext_summary:
+        return
+    types = {ext if ext != "<no-ext>" else "(no ext)": size for ext, cnt, size in dash_current_ext_summary[:10]}
+    if not types:
+        return
+    try:
+        fig = Figure(figsize=(8,5))
+        ax = fig.add_subplot(111)
+        keys = list(types.keys())[::-1]
+        vals = [s / (1024*1024*1024) for s in list(types.values())[::-1]]
+        ax.barh(keys, vals, color="#1b6bff")
+        ax.set_xlabel("Size (GB)", fontsize=12)
+        ax.set_title("Top File Types by Size", fontsize=14, weight="bold")
+        ax.grid(axis='x', linestyle='--', alpha=0.7)
+        fig.tight_layout()
+        show_figure_nonblocking(fig)
+    except Exception:
+        pass
+
+def show_viz_chart():
+    if not viz_current_ext_summary:
+        return
+    top_types = viz_current_ext_summary[:10]
+    if not top_types:
+        return
+    try:
+        fig = Figure(figsize=(8,8))
+        ax = fig.add_subplot(111)
+        labels = [e if e != "<no-ext>" else "(no ext)" for e, c, s in top_types]
+        sizes = [s for e, c, s in top_types]
+        explode = [0.05] * len(sizes)
+        ax.pie(sizes, labels=labels, explode=explode, autopct='%1.1f%%', startangle=140, 
+               textprops={'fontsize': 10})
+        ax.set_title("Top File Types by Size", fontsize=14, weight="bold")
+        fig.tight_layout()
+        show_figure_nonblocking(fig)
+    except Exception:
+        pass
+
+# ----------------------------
 # Dashboard scan implementation
 # ----------------------------
 def dashboard_scan(path):
@@ -516,7 +604,9 @@ def dashboard_scan(path):
 
         status_var.set("Scanning (dashboard)...")
         progressbar.set(0)
-        dash_output.delete('1.0','end')
+        for w in dash_output_scroll.winfo_children():
+            w.destroy()
+        dash_chart_btn.configure(state="disabled")
 
         # optional quick count for determinate progress (fast-ish)
         total_estimate = None
@@ -545,36 +635,38 @@ def dashboard_scan(path):
             )
             # render results in UI thread
             def _render():
-                dash_output.insert('end', f"📁 Scanned Folder:\n   {path}\n\n")
-                dash_output.insert('end', f"🧾 Total Files: {total_files:,}\n💾 Total Size: {humanize.naturalsize(total_size)}\n")
-                dash_output.insert('end', "\n─────────────────────────────\n")
-                dash_output.insert('end', "🔥 Top Files:\n\n")
+                global dash_current_ext_summary
+                dash_current_ext_summary = ext_summary
+                
+                for w in dash_output_scroll.winfo_children():
+                    w.destroy()
+                    
+                summary_card = AccordionCard(dash_output_scroll, "Summary", default_open=True)
+                summary_card.pack(fill='x', pady=4)
+                sum_lbl = ctk.CTkLabel(summary_card.content_frame, text=f"📁 Path: {path}\n🧾 Files: {total_files:,}\n💾 Size: {humanize.naturalsize(total_size)}", font=ctk.CTkFont(size=14), justify="left", anchor="w")
+                sum_lbl.pack(padx=12, pady=12, fill='x')
+                
+                top_card = AccordionCard(dash_output_scroll, "Top 20 Largest Files", default_open=False)
+                top_card.pack(fill='both', expand=True, pady=4)
+                top_box = ctk.CTkTextbox(top_card.content_frame, font=OUTPUT_FONT, height=250)
+                top_box.pack(fill='both', expand=True, padx=4, pady=4)
                 for i, (sz, fp) in enumerate(top_files[:20], 1):
-                    dash_output.insert('end', f" {i:2}. {humanize.naturalsize(sz):>8}  —  {Path(fp).name}\n     📍 {fp}\n\n")
+                    name = Path(fp).name
+                    if len(name) > 35: name = name[:32] + "..."
+                    top_box.insert('end', f" {i:2d}. {humanize.naturalsize(sz):>10}  |  {name}\n      {fp}\n\n")
+                top_box.configure(state="disabled")
 
-                dash_output.insert('end', "─────────────────────────────\n")
-                dash_output.insert('end', "📊 Top File Types by Total Size:\n\n")
+                types_card = AccordionCard(dash_output_scroll, "File Types Breakdown", default_open=False)
+                types_card.pack(fill='both', expand=True, pady=4)
+                types_box = ctk.CTkTextbox(types_card.content_frame, font=OUTPUT_FONT, height=200)
+                types_box.pack(fill='both', expand=True, padx=4, pady=4)
                 for ext, cnt, size in ext_summary[:15]:
-                    dash_output.insert('end', f" {ext:>8}   • {cnt:6,} files   • {humanize.naturalsize(size)}\n")
-
-                # small chart non-blocking
-                types = {ext if ext != "<no-ext>" else "(no ext)": size for ext, cnt, size in ext_summary[:10]}
-                if types:
-                    try:
-                        fig = Figure(figsize=(6,4))
-                        ax = fig.add_subplot(111)
-                        keys = list(types.keys())[::-1]
-                        vals = [s / (1024*1024*1024) for s in list(types.values())[::-1]]
-                        ax.barh(keys, vals)
-                        ax.set_xlabel("Size (GB)")
-                        ax.set_title("Top file types by size")
-                        fig.tight_layout()
-                        show_figure_nonblocking(fig)
-                    except Exception:
-                        pass
+                    types_box.insert('end', f" {ext:>10}   • {cnt:7,} files   • {humanize.naturalsize(size):>10}\n")
+                types_box.configure(state="disabled")
 
                 status_var.set("Dashboard scan complete")
                 progressbar.set(0)
+                dash_chart_btn.configure(state="normal")
             root.after(0, _render)
         except Exception as e:
             root.after(0, lambda: messagebox.showerror("Scan error", str(e)))
@@ -606,14 +698,9 @@ def folder_visualize(path):
 
         status_var.set("Analyzing folder (visualizer)...")
         progressbar.set(0)
-        viz_output.delete('1.0','end')
-        try:
-            types_listbox.delete('0.0', 'end')
-        except Exception:
-            try:
-                types_listbox.delete('1.0', 'end')
-            except Exception:
-                pass
+        for w in viz_output_scroll.winfo_children():
+            w.destroy()
+        viz_chart_btn.configure(state="disabled")
 
         # optional estimate
         total_estimate = None
@@ -637,44 +724,38 @@ def folder_visualize(path):
                 path, progress_callback=progress_cb, total_estimate=total_estimate, top_n=25, cancel_event=viz_cancel_event
             )
             def _render():
-                viz_output.insert('end', f"📂 Folder Analyzed:\n   {path}\n\n")
-                viz_output.insert('end', f"🧾 Total Files: {total_files:,}\n💾 Total Size: {humanize.naturalsize(total_size)}\n")
-                viz_output.insert('end', "\n─────────────────────────────\n")
-                viz_output.insert('end', "🔥 Top 25 Largest Files:\n\n")
+                global viz_current_ext_summary
+                viz_current_ext_summary = ext_summary
+                
+                for w in viz_output_scroll.winfo_children():
+                    w.destroy()
+                    
+                summary_card = AccordionCard(viz_output_scroll, "Analysis Summary", default_open=True)
+                summary_card.pack(fill='x', pady=4)
+                sum_lbl = ctk.CTkLabel(summary_card.content_frame, text=f"📂 Path: {path}\n🧾 Files: {total_files:,}\n💾 Size: {humanize.naturalsize(total_size)}", font=ctk.CTkFont(size=14), justify="left", anchor="w")
+                sum_lbl.pack(padx=12, pady=12, fill='x')
+                
+                top_card = AccordionCard(viz_output_scroll, "Top 25 Largest Files", default_open=False)
+                top_card.pack(fill='both', expand=True, pady=4)
+                top_box = ctk.CTkTextbox(top_card.content_frame, font=OUTPUT_FONT, height=300)
+                top_box.pack(fill='both', expand=True, padx=4, pady=4)
                 for i, (sz, fp) in enumerate(top_files[:25], 1):
-                    viz_output.insert('end', f" {i:2}. {humanize.naturalsize(sz):>8}  —  {Path(fp).name}\n     📍 {fp}\n\n")
+                    name = Path(fp).name
+                    if len(name) > 35: name = name[:32] + "..."
+                    top_box.insert('end', f" {i:2d}. {humanize.naturalsize(sz):>10}  |  {name}\n      {fp}\n\n")
+                top_box.configure(state="disabled")
 
-                viz_output.insert('end', "─────────────────────────────\n")
-                viz_output.insert('end', "📊 File Types (by size):\n\n")
+                types_card = AccordionCard(viz_output_scroll, "All File Types", default_open=False)
+                types_card.pack(fill='both', expand=True, pady=4)
+                types_box = ctk.CTkTextbox(types_card.content_frame, font=OUTPUT_FONT, height=300)
+                types_box.pack(fill='both', expand=True, padx=4, pady=4)
                 for ext, cnt, size in ext_summary:
-                    line = f" {ext:>8}  {cnt:6} files — {humanize.naturalsize(size)}\n"
-                    viz_output.insert('end', line)
-                    try:
-                        types_listbox.insert('0.0', line)
-                    except Exception:
-                        try:
-                            types_listbox.insert("end", line)
-                        except Exception:
-                            pass
-
-                # pie chart non-blocking
-                top_types = ext_summary[:10]
-                if top_types:
-                    try:
-                        fig = Figure(figsize=(6,6))
-                        ax = fig.add_subplot(111)
-                        labels = [e if e != "<no-ext>" else "(no ext)" for e, c, s in top_types]
-                        sizes = [s for e, c, s in top_types]
-                        explode = [0.04] * len(sizes)
-                        ax.pie(sizes, labels=labels, explode=explode, autopct='%1.1f%%', startangle=140)
-                        ax.set_title("Top file types by size")
-                        fig.tight_layout()
-                        show_figure_nonblocking(fig)
-                    except Exception:
-                        pass
+                    types_box.insert('end', f" {ext:>10} | {cnt:7,} f | {humanize.naturalsize(size):>10}\n")
+                types_box.configure(state="disabled")
 
                 status_var.set("Folder visualization complete")
                 progressbar.set(0)
+                viz_chart_btn.configure(state="normal")
             root.after(0, _render)
         except Exception as e:
             root.after(0, lambda: messagebox.showerror("Analysis error", str(e)))
@@ -687,61 +768,120 @@ def folder_visualize(path):
 # ----------------------------
 # Cache scanning & cleaning
 # ----------------------------
-def cache_scan_and_report():
-    status_var.set("Scanning caches...")
-    progressbar.set(0)
-    cache_output.delete('1.0','end')
-    summary = get_cache_summary(top_n=10)
-    if not summary:
-        cache_output.insert('end', "No cache locations found.\n")
-        status_var.set("Cache scan complete")
-        return
+def _render_cache_items(summary, append=False):
+    if not append:
+        for widget in cache_scroll.winfo_children():
+            widget.destroy()
+        cache_checkbox_vars.clear()
+        cache_meta_data.clear()
 
-    total_all = 0
     for p, meta in summary.items():
-        cache_output.insert('end', f"🗑️ Cache Location:\n   {p}\n")
-        cache_output.insert('end', f"   📦 Size: {humanize.naturalsize(meta['size'])}\n   📄 Files: {meta['files']:,}   📁 Folders: {meta['folders']:,}\n\n")
-        total_all += meta['size']
-        if meta['top']:
-            cache_output.insert('end', "   Top items:\n")
-            for sz, fp in meta['top']:
-                cache_output.insert('end', f"     {humanize.naturalsize(sz)} - {fp}\n")
-        cache_output.insert('end', "-"*80 + "\n")
-    cache_output.insert('end', f"\nTotal removable cache (sum): {humanize.naturalsize(total_all)}\n")
+        if p in cache_meta_data:
+            continue
+        
+        cache_meta_data[p] = meta
+        var = ctk.IntVar(value=0)
+        cache_checkbox_vars[p] = var
+        
+        frame = ctk.CTkFrame(cache_scroll, fg_color="#1e1e1e", corner_radius=6)
+        frame.pack(fill='x', padx=8, pady=4)
+        
+        cb = ctk.CTkCheckBox(frame, text="", variable=var, width=24)
+        cb.pack(side='left', padx=(12, 4), pady=12)
+        
+        info_frame = ctk.CTkFrame(frame, fg_color="transparent")
+        info_frame.pack(side='left', fill='x', expand=True, padx=8, pady=8)
+        
+        path_lbl = ctk.CTkLabel(info_frame, text=p, font=ctk.CTkFont(size=14, weight="bold"), anchor="w")
+        path_lbl.pack(fill='x')
+        
+        stats_text = f"Size: {humanize.naturalsize(meta['size'])}  |  Files: {meta['files']:,}  |  Folders: {meta['folders']:,}"
+        stats_lbl = ctk.CTkLabel(info_frame, text=stats_text, text_color="#aaaaaa", anchor="w")
+        stats_lbl.pack(fill='x')
+
+    total_found = sum(m['size'] for m in cache_meta_data.values())
+    cache_summary_lbl.configure(text=f"Found {len(cache_meta_data)} locations. Total size: {humanize.naturalsize(total_found)}")
     status_var.set("Cache scan complete")
     progressbar.set(0)
 
-def cache_clean_all():
-    confirm = messagebox.askyesno("Confirm clean", "This will attempt to remove cache files found in common cache locations. Files in use will be skipped. Proceed?")
+def cache_scan_and_report():
+    status_var.set("Scanning caches...")
+    progressbar.set(0)
+    summary = get_cache_summary(top_n=1)
+    if not summary:
+        for widget in cache_scroll.winfo_children():
+            widget.destroy()
+        lbl = ctk.CTkLabel(cache_scroll, text="No cache locations found.")
+        lbl.pack(pady=20)
+        status_var.set("Cache scan complete")
+        return
+    _render_cache_items(summary)
+
+def cache_scan_custom(path):
+    status_var.set(f"Scanning {path}...")
+    progressbar.set(0)
+    total_size = 0
+    files_count = 0
+    folders = set()
+    for dirpath, dirnames, filenames in os.walk(path, topdown=True):
+        dirnames[:] = [d for d in dirnames if not os.path.islink(os.path.join(dirpath, d)) and not os.path.ismount(os.path.join(dirpath, d))]
+        folders.add(dirpath)
+        for f in filenames:
+            fp = os.path.join(dirpath, f)
+            try:
+                sz = os.path.getsize(fp)
+                total_size += sz
+                files_count += 1
+            except Exception:
+                continue
+    summary = {path: {'size': total_size, 'files': files_count, 'folders': len(folders), 'top': []}}
+    _render_cache_items(summary, append=True)
+    status_var.set("Custom folder scanned")
+
+def cache_clean_selected():
+    selected_paths = [p for p, var in cache_checkbox_vars.items() if var.get() == 1]
+    if not selected_paths:
+        messagebox.showinfo("Nothing selected", "Please select at least one cache location to clean.")
+        return
+        
+    confirm = messagebox.askyesno("Confirm clean", "This will move all contents within the selected cache folders to the Recycle Bin. Proceed?")
     if not confirm:
         return
-    status_var.set("Cleaning cache (may take a while)...")
+        
+    status_var.set("Moving items to Recycle Bin...")
+    progressbar.set(0.5)
+    
+    cleaned_items = 0
+    skipped_items = 0
+    total_freed = 0
+    
+    for p in selected_paths:
+        try:
+            for item in os.listdir(p):
+                item_path = os.path.join(p, item)
+                try:
+                    sz = 0
+                    if os.path.isfile(item_path):
+                        sz = os.path.getsize(item_path)
+                    elif os.path.isdir(item_path):
+                        sz = sum(os.path.getsize(os.path.join(dp, f)) for dp, _, fn in os.walk(item_path) for f in fn)
+                    send2trash(item_path)
+                    cleaned_items += 1
+                    total_freed += sz
+                except Exception:
+                    skipped_items += 1
+        except Exception:
+            skipped_items += 1
+            
+    for widget in cache_scroll.winfo_children():
+        widget.destroy()
+    cache_checkbox_vars.clear()
+    cache_meta_data.clear()
+    cache_summary_lbl.configure(text="Clean complete.")
+    
+    messagebox.showinfo("Clean complete", f"Items moved to Recycle Bin: {cleaned_items}\nSkipped (in-use): {skipped_items}\nSpace Freed: {humanize.naturalsize(total_freed)}")
+    status_var.set(f"Cleaned {humanize.naturalsize(total_freed)}")
     progressbar.set(0)
-    summary = get_cache_summary(top_n=10)
-    cleaned = 0
-    skipped = 0
-    errors = 0
-    for p, meta in summary.items():
-        for dirpath, dirnames, filenames in os.walk(p):
-            for f in filenames:
-                fp = os.path.join(dirpath, f)
-                try:
-                    send2trash(fp)  # safe send to recycle bin
-                    cleaned += 1
-                except Exception:
-                    # could be in-use/protected or permission denied
-                    skipped += 1
-            # try removing empty folders
-            for d in dirnames:
-                dp = os.path.join(dirpath, d)
-                try:
-                    if not os.listdir(dp):
-                        os.rmdir(dp)
-                except Exception:
-                    pass
-    cache_scan_and_report()
-    messagebox.showinfo("Clean complete", f"Attempted to remove cache files.\nCleaned: {cleaned}\nSkipped (in-use/protected): {skipped}")
-    status_var.set("Cache cleaned (best-effort)")
 
 # ----------------------------
 # Final housekeeping & mainloop
